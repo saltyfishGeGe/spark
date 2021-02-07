@@ -1,0 +1,14 @@
+#提交jar包命令，本地提交
+bin/spark-submit --class org.apache.spark.examples.SparkPi --master local[2] ./examples/jars/spark-examples_2.12-3.0.0.jar 10
+
+#spark高可用方式提交
+#在spark控制台查看作业运行情况
+bin/spark-submit --class org.apache.spark.examples.SparkPi --master spark://node01:7077,node02:7077 ./examples/jars/spark-examples_2.12-3.0.0.jar 10
+
+#yarn模式提交
+#在hadoop控制台all Applications查看运行情况
+bin/spark-submit --class org.apache.spark.examples.SparkPi --master yarn --deploy-mode cluster ./examples/jars/spark-examples_2.12-3.0.0.jar 10
+
+#--deploy-mode
+# cluster 集群模式运行作业，只会在客户端显示是否执行完毕
+# client 在客户端打印日志
