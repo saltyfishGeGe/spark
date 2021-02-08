@@ -1,4 +1,4 @@
-package com.bigdata.spark.core.operator
+package com.bigdata.spark.core.transform.operator
 
 import org.apache.hadoop.mapred.Partitioner
 import org.apache.hadoop.mapred.lib.HashPartitioner

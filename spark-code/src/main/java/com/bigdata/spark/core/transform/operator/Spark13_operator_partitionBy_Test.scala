@@ -1,4 +1,4 @@
-package com.bigdata.spark.core.operator
+package com.bigdata.spark.core.transform.operator
 
 import com.bigdata.spark.core.test01.MyParitioner
 import org.apache.spark
