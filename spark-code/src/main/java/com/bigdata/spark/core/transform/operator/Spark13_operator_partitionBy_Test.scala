@@ -1,6 +1,6 @@
 package com.bigdata.spark.core.transform.operator
 
-import com.bigdata.spark.core.test01.MyParitioner
+import com.bigdata.spark.core.scala_test.MyParitioner
 import org.apache.spark
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}

@@ -1,4 +1,4 @@
-package com.bigdata.spark.core.wc
+package com.bigdata.spark.core.rdd.wc
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}

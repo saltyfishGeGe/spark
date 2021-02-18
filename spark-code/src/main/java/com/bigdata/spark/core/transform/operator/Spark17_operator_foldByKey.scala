@@ -1,14 +1,13 @@
 package com.bigdata.spark.core.transform.operator
 
-import org.apache.spark
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 
-object Spark14_operator_reduceByKey {
+object Spark17_operator_foldByKey {
 
   def main(args: Array[String]): Unit = {
 
-    val datas = List(("a", 1), ("a", 2), ("b", 1), ("c", 2), ("c", 3))
+    val datas = List(("a", 1),("a", 2),("b", 3),("b", 4),("b", 5),("a", 6))
 
     val sparkConf = new SparkConf().setMaster("local[*]").setAppName("Spark_operator")
 
@@ -16,16 +15,11 @@ object Spark14_operator_reduceByKey {
 
     val rdd: RDD[(String, Int)] = sc.makeRDD(datas, 2)
 
-    // 只有key满足两个以上才会参与运算
-    //x= 1, y = 2
-    //x= 2, y = 3
-    //(b,1)
-    //(a,3)
-    //(c,5)
-    rdd.reduceByKey((x,y) => {
-      println(s"x= ${x}, y = ${y}")
-      x + y
-    }).collect().foreach(println)
+    // 当分区内逻辑和分区间逻辑相同时可用foldByKey,与aggregateByKey相同
+    // (b,12)
+    // (a,9)
+    // foldByKey和reduceByKey的区别主要是初始值
+    rdd.foldByKey(0)(_+_).collect().foreach(println)
 
     sc.stop
   }

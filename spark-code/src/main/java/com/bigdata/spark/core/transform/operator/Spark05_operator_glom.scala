@@ -16,7 +16,7 @@ object Spark05_operator_glom {
     val rdd: RDD[Int] = sc.makeRDD(datas, 2)
 
     // Int => Array, 与flatMap刚好相反
-    // 分区后，将分区内的数据转换为数组，结果将输出两个数组
+    // 分区后，将分区内的所有数据转换为一个数组，结果将输出两个数组
     val glomRDD: RDD[Array[Int]] = rdd.glom()
 
 //    glomRDD.foreach(arr => {

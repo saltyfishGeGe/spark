@@ -12,7 +12,6 @@
         <module>spark-code</module>
     </modules>
 
-
     <dependencies>
         <dependency>
             <groupId>org.apache.spark</groupId>

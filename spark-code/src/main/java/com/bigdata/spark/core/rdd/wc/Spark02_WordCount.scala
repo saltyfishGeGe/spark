@@ -1,9 +1,9 @@
-package com.bigdata.spark.core.wc
+package com.bigdata.spark.core.rdd.wc
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 
-object Spark01_WordCount {
+object Spark02_WordCount {
 
   def main(args: Array[String]): Unit = {
 
@@ -16,21 +16,23 @@ object Spark01_WordCount {
     // 被val声明的对象不可以改变地址， var为可变
     val sc = new SparkContext(conf)
 
-
-    // TODO 执行业务操作
-
-    // 1. 读取文件
-    // sc.addFile("/datas/wc.txt")
     val lines: RDD[String] = sc.textFile("datas")
 
-    // 2. 分词
     val words: RDD[String] = lines.flatMap(line => line.split(" "))
 
-    // 3. 统计
-    val wordGroup: RDD[(String, Iterable[String])] = words.groupBy(w => w)
-    val wordToCount = wordGroup.map {
+    val wordToOne: RDD[(String, Int)] = words.map(
+      word => (word, 1)
+    )
+
+    val wordGroup: RDD[(String, Iterable[(String, Int)])] = wordToOne.groupBy(w => w._1)
+
+    val wordToCount: RDD[(String, Int)] = wordGroup.map {
       case (word, list) => {
-        (word, list.size)
+        list.reduce(
+          (t1, t2) => {
+            (t1._1, t1._2 + t2._2)
+          }
+        )
       }
     }
 
