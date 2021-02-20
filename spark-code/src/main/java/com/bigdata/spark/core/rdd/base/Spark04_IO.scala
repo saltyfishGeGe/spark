@@ -3,7 +3,7 @@ package com.bigdata.spark.core.rdd.base
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 
-object Spark04_RDD_IO {
+object Spark04_IO {
 
   def main(args: Array[String]): Unit = {
 
