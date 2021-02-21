@@ -3,7 +3,7 @@ package com.bigdata.spark.core.practice
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 
-object Spark02_Test_UserVisitAction_top10 {
+object Spark02_Test_top10 {
 
   def main(args: Array[String]): Unit = {
     // 测试数据datas/user_visit_action.txt

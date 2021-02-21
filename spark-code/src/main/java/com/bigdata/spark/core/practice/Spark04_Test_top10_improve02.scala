@@ -5,7 +5,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.mutable.ArrayOps
 
-object Spark04_Test_UserVisitAction_top10 {
+object Spark04_Test_top10_improve02 {
 
   def main(args: Array[String]): Unit = {
     // 测试数据datas/user_visit_action.txt
@@ -27,14 +27,21 @@ object Spark04_Test_UserVisitAction_top10 {
     val result: Array[(String, (Int, Int, Int))] = rdd.flatMap(line => {
       val columns: ArrayOps.ofRef[String] = line.split("_")
       if (columns(6) != "-1") {
+        // 点击，直接构造成最终数据结构
         List((columns(6), (1, 0, 0)))
+
       } else if (columns(8) != "null") {
         val ids: ArrayOps.ofRef[String] = columns(8).split(",")
+        // 下单，需要打散该列多个值，再构造
         ids.map((_, (0, 1, 0)))
+
       } else if (columns(10) != "null") {
         val ids: ArrayOps.ofRef[String] = columns(8).split(",")
+        // 支付，需打散该列多个值在构造
         ids.map((_, (0, 0, 1)))
+
       } else {
+        // 不符合数据返回空
         Nil
       }
     })
