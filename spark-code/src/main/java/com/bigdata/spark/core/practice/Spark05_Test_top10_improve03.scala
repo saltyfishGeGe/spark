@@ -70,9 +70,10 @@ object Spark05_Test_top10_improve03 {
         false
       }
       false
-    }).reverse.take(10)
+    })
 
-    result.foreach(println)
+    result.reverse.take(10).foreach(println)
+
 
     val endTime: Long = System.currentTimeMillis()
     println("耗时：" + endTime.-(startTime))
