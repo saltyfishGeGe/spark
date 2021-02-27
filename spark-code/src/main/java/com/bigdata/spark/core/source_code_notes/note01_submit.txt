@@ -1,0 +1,76 @@
+1. 脚本命令提交任务
+bin/spark-submit
+--class org.apache.spark.examples.SparkPi
+--master spark://node01:7077,node02:7077 ./examples/jars/spark-examples_2.12-3.0.0.jar 10
+
+2. 调用 org.apache.spark.deploy.SparkSubmit的main方法提交
+    -> doSubmit()
+        -> parseArguments() 解析参数
+        -> 创建SparkSubmitArguments对象，调用parse(args.asJava)，此方法为父类的方法
+              -> 调用SparkSubmitArguments的handle方法进行处理，handle被子类重写
+              -> 对所有命令行提交的参数进行解析
+                 对未传值的参数进行默认赋值，默认action为submit
+        -> submit()
+            -> 判断是否为集群模式，否则doRunMain -> runMain -> prepareSubmitEnvironment准备提交环境
+                childMainClass = org.apache.spark.deploy.yarn.YarnClusterApplication
+            -> 基于反射创建childMainClass并调用YarnClusterApplication的start方法
+                YarnClusterApplication的代码需要修改pom -> spark-core更换成 spark-yarn
+                -> yarnClient的start方法中会创建一个resourceManagerClient用于访问资源
+                    -> 连接yarn服务，提交application，(在容器中通过bin/java启动进程)
+                       -> createContainerLaunchContext
+                              集群模式： amClass = "org.apache.spark.deploy.yarn.ApplicationMaster"
+                              非集群模式：amClass = "org.apache.spark.deploy.yarn.ExecutorLauncher"
+                       -> 封装集群指令，发送至resourceManager
+
+3. ApplicationMaster根据参数启动Driver线程，并初始化sparkContext
+    -> 在ApplicationMaster的伴生对象中查看main方法，为容器启动作业流程
+        -> 创建 YarnRMClient，其中包含AMRMClient：用于applicationMaster和ResourceManager之间通信
+    -> 集群模式：runDriver
+        -> startUserApplication 启动用户应用程序线程
+            -> 获取启动命令的参数，例： --class :com.xx.xx, 并通过反射实例化
+               获取main方法，构造新的线程，并命名为：Driver。启动线程
+            -> 进入用户的spark程序中，初始化sparkContext上下文，并执行
+        -> ThreadUtils.awaitResult 等待用户程序和上下文完成
+    -> registerAM 注册AM，用于集群申请资源
+    -> createAllocator 创建分配器
+        -> allocator.allocateResources() 获取可分配资源列表
+            -> allocateResponse.getAllocatedContainers() 获取可分配的容器
+            -> handleAllocatedContainers 处理可分配的容器(YarnAllocator)
+                -> 对资源进行初步整理(机架等)
+                -> runAllocatedContainers 执行容器
+                    -> 判断当前正在执行容器数和目标任务数是否相同，不同则通过线程池执行新的线程
+                    -> ExecutorRunnable.run() 执行新的线程
+                        -> run方法中存在对象NMClient，用于nodeManager通信
+                            -> startContainer: 启动容器
+                                -> prepareCommand 准备指令
+                                    -> bin/java org.apache.spark.executor.CoarseGrainedExecutorBackend
+                                -> startContainer : 将上下文、指令等环境信息传递过去nodeManager
+
+4. 启动executor通信后台：CoarseGrainedExecutorBackend
+    -> 解析参数：run()
+        -> SparkEnv.createExecutorEnv 创建环境env
+        -> 若为executor,则创建 CoarseGrainedExecutorBackend终端
+        -> env.rpcEnv.setupEndpoint 注册一个通信终端，Executor/WorkerWatcher
+            -> NettyRpcEnv -> Dispatcher -> registerRpcEndpoint
+                -> endpoints -> 发送onStart到inbox
+        -> CoarseGrainedExecutorBackend终端收到onStart消息后，调用onStart方法
+            -> 获取driver引用并发送请求ask到applicationMaster，用于注册executor
+                消息接收端在SparkContext -> _schedulerBackend
+                    -> CoarseGrainedSchedulerBackend -> receiveAndReply -> 注册成功后返回
+                    -> spark2.12版本，注册executor后会调用makeOffers()方法，用于发送消息LaunchTask调起executor
+                        spark3.1版本，executor在接收方调起
+            -> receive方法接收后，正式创建executor
+                executor = new Executor(executorId, hostname, env, userClassPath, isLocal = false)
+
+5. 创建Executor计算对象
+    -> resumeDriver 资源环境初始化完成
+    -> SparkContext -> _taskScheduler.postStartHook() -> waitBackendReady()
+        -> waitBackendReady中包含while循环用于等待资源准备完成, 一旦资源完成，则SparkContext会继续执行
+
+小结：任务提交 -> Driver运行 -> 集群管理器 -> 获取Executor资源 -> 注册到Driver端                        -> Executor启动
+                          -> 执行main函数 -> action算子 -> stage划分 -> 创建taskSet分发给executor    ->
+     任务提交过程中，同时触发 资源申请和计算两个方向交叉执行，一条执行时另一条会进行阻塞
+
+client模式：driver在本地机器，提交的机器成为ExecutorLauncher,但是调用的一样的
+cluster模式：driver在集群机器，提交的机器为applicationMaster
+

@@ -1,0 +1,21 @@
+# 通信原理
+    SparkContext -> createSparkEnv -> createDriverEnv ->  create
+    -> RpcEnv.create
+        -> NettyRpcEnvFactory().create(config) 基础通信环境采用netty
+        -> Utils.startServiceOnPort 非客户端模式下，会在一个端口下开启一个监听服务
+            -> 创建TransportServer：采用Epoll模式，因为linux下不支持aio，通过epoll模仿aio
+            -> 注册RpcEndpoint: 主要用于接收数据receive*
+                     -> inbox MessageLoop
+                -> 创建RpcEndpointRef: 主要用于发送数据ask*
+                     -> outboxes = new ConcurrentHashMap[RpcAddress, Outbox]()
+                     -> outbox 基于 TransportClient 发送消息
+                -> receivers.offer(data) 向队列中插入新增数据，内部类MessageLoop存在run方法循环监听receivers中的
+                    新增消息，一旦有新增消息则调用Process方法进行处理消息并发送
+
+    Executor被启动时：
+        CoarseGrainedExecutorBackend -> main -> run
+            -> SparkEnv.createExecutorEnv
+            -> 接下去的步骤与上部分完全一样
+
+
+    EndPoint -> outBox -> Inbox2 -> EndPoint2

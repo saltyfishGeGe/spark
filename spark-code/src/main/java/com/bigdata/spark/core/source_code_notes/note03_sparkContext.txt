@@ -1,0 +1,57 @@
+# spark 核心对象
+SparkContext:
+    - _conf: SparkConf 基础环境配置
+    - _env: SparkEnv 通信环境
+    - _schedulerBackend: SchedulerBackend 通信后台，主要用于executor通信
+    - _taskScheduler: TaskScheduler 任务调度器，用于任务的调度
+    - _dagScheduler: DAGScheduler 阶段调度，有向无环图，作业/任务的划分
+
+
+RDD依赖：
+    sc.textFile -> 得到一个MapPartitionsRDD
+    rdd.flatMap -> 创建一个新的MapPartitionsRDD，并且在父类RDD方法中，new OneToOneDependency(oneParent)) 绑定依赖
+    rdd.groupBy -> 创建一个ShuffledRDD，extends RDD[(K, C)](prev.context, Nil)，原有依赖关系传入Nil
+                    但重写方法getDependencies会创建新的shuffle依赖
+                    new ShuffleDependency(prev, part, serializer, keyOrdering, aggregator, mapSideCombine)
+
+dag阶段划分：
+    任何一个行动算子触发runJob -> dagScheduler.runJob -> submitJob
+        eventProcessLoop.post(JobSubmitted())
+            -> 往eventQueue加入事件，并通过eventThread获取 -> onReceive(event)
+                -> DAGSchedulerEventProcessLoop -> doOnReceive()
+                    -> 模式匹配JobSubmitted -> dagScheduler.handleJobSubmitted(),在该方法中进行阶段划分
+                    -> createResultStage
+                        -> getOrCreateParentStages 获取上一级阶段
+                            -> 取出shuffle依赖， 创建shuffleMapStage (用于写磁盘的之前的阶段)
+                                Spark阶段划分等于shuffle依赖数量 + 1
+                                如果存在一个shuffle，则只有两个阶段ShuffleMapStage -> ResuleStage
+                        -> new ResultStage 结果阶段
+                    -> submitStage(finalStage) 提交整个阶段
+                        -> submitMissingTasks(stage, jobId.get), 递归获取最前的阶段进行提交
+                            -> 通过模式匹配，如果是shuffleMapStage -> 计算分区 创建 new ShuffleMapTask
+                                -> 分区 (0 until numPartions) 3个分区则是 [0,1,2,3)
+                            -> taskScheduler.submitTasks(new TaskSet()) 包装成任务集提交
+                                -> createTaskSetManager: 包装taskSet
+                                -> schedulableBuilder.addTaskSetManager(manager, manager.taskSet.properties),添加task
+                                    -> 调度器策略，默认是FIFO
+                                        -> SchedulingMode.FIFO
+                                        -> SchedulingMode.FAIR
+                                -> backend.reviveOffers()
+                                    -> driverEndpoint.send(ReviveOffers), 通过终端发消息
+                                    -> 通过CoarseGrainedSchedulerBackend的receive方法接收ReviveOffers的消息
+                                        -> makeOffers() -> resourceOffers
+                                            -> 排序，调优，taskSet.myLocalityLevels，本地化级别：进程本地化、节点本地化、机架本地化
+                                                移动数据不如移动计算
+                                        -> launchTasks(), 发送任务并启动
+                                            -> executorData.executorEndpoint.send(
+                                                LaunchTask(new SerializableBuffer(serializedTask)))
+
+executor执行：
+    CoarseGrainedExecutorBackend -> receive -> case LaunchTask(data)
+        -> 对任务进行反序列化
+        -> 将任务包装成一个Runner后在线程池中启动
+            -> task.run
+                -> runTask()
+
+
+
