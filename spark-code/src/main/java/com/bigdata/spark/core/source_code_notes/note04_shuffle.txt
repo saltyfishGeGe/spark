@@ -1,0 +1,37 @@
+shuffle一定会导致落盘，导致IO操作速率下降
+    在shuffle操作中，上一个RDD会生成shuffleMapTask，其中包含了数据写磁盘的操作
+    而resultStage应存在一个读磁盘文件的操作
+
+写磁盘:ShuffleMapTask -> runTask()
+        -> SparkEnv.get.shuffleManager.getWriter, 获取writer(SortShuffleManager)
+        -> SortShuffleManager.getWriter: 现在只有SortShuffleManager,旧版本存在Hash
+            -> 存在三个处理器
+                SerializedShuffleHandle: 序列化规则支持重定位操作可用java不支持，kryo支持
+                                         不能使用预聚合
+                                         下游分区数量不大于16777216
+                BypassMergeSortShuffleHandle: 不能使用预聚合功能：即combine操作，下
+                                              游分区数量<=200可用
+                BaseShuffleHandle:  其他情况，需排序，得到SortShuffleWriter
+
+        -> 得到SortShuffleWriter.write
+            -> dep.mapSideCombine,如果存在预聚合，则会传入aggregator和keyOrdering
+            -> sorter.insertAll(records) 将数据传入排序器
+                -> 存在预聚合，则 map.changeValue，更新最新的值存放在map中
+                -> 不存在预聚合，通过key取得分区后存在buffer
+                -> maybeSpillCollection, 当数据量超出阈值的时候进行溢写
+                    -> maybeSpill
+                        -> spill(collection)
+                        -> releaseMemory()
+            -> writePartitionedFile: 将内存中或磁盘中的临时文件进行合并，涉及mergeSort归并排序
+            -> shuffleBlockResolver.writeIndexFileAndCommit: 写入索引文件和数据文件
+            -> indexTmp.renameTo(indexFile)
+            -> dataTmp.renameTo(dataFile)
+
+
+读磁盘:ResultTask -> runTask()
+        -> rdd.iterator(partition, context)
+            -> getOrCompute(split, context)
+                -> computeOrReadCheckpoint
+                    -> compute -> 进入shuffleRDD中找实现类
+                        -> ShuffleRDD -> compute -> SparkEnv.get.shuffleManager.getReader
+                            -> BlockStoreShuffleReader.read()
