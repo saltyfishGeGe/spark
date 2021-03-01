@@ -21,6 +21,8 @@
 .idea/
 spark-code/target/
 output/*
+output1/*
+output2/*
 spark-code/*.iml
 *.iml
 

@@ -1,0 +1,29 @@
+// dataSet具有强类型的数据结构，需要提供类型信息
+
+// 定义样例类
+case class Person(name: String, age:Long)
+
+// 构造集合
+val list = List(Person("zhangsan",30), Person("lisi",40))
+
+// 转换为DS
+val ds = list.toDS
+
+ds.show
+ds.schema
+
+
+// DF和DS之间的转换
+val df = spark.read.json("input/user.json")
+case class Person(age:Long, username:String)
+val ds = df.as[Person]
+
+
+// RDD和DS之间的转换
+val rdd = sc.makeRDD(List(Person(10,"zhangsan"), Person(20,"lisi")))
+// 转换前提是数据已经过样例类包装
+val ds = rdd.toDS
+// 转换为rdd
+val rdd1 = ds.rdd
+
+

@@ -1,0 +1,21 @@
+// RDD转换为DF
+val rdd = sc.makeRDD(List(("zhangsan",30),("lisi",20),("wangwu",10)))
+val df = rdd.toDF("username", "age")
+df.show
++--------+---+
+|username|age|
++--------+---+
+|zhangsan| 30|
+|    lisi| 20|
+|  wangwu| 10|
++--------+---+
+
+// DataFrame转换为RDD
+df.rdd
+res41: org.apache.spark.rdd.RDD[org.apache.spark.sql.Row] = MapPartitionsRDD[98] at rdd at <console>:26
+
+
+
+
+
+

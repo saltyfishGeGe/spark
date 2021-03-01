@@ -1,0 +1,108 @@
+// dataFrame是在RDD的基础上增加数据结构，
+
+// 读取数据源
+val df = spark.read.json("input/user.json")
+df.show
++---+--------+
+|age|username|
++---+--------+
+| 30|zhangsan|
+| 20|    lisi|
+| 10|  wangwu|
++---+--------+
+
+// 创建临时视图
+df.createTempView("user")
+// df.createOrReplaceTempView("user")
+// df.createGloabalTempView("user")  全局临时表
+// spark.sql(select * from global_temp.emp)  // 引用时需加入库名
+
+spark.sql("select username from user").show
++--------+
+|username|
++--------+
+|zhangsan|
+|    lisi|
+|  wangwu|
++--------+
+
+spark.sql("select avg(age) from user").show
++--------+
+|avg(age)|
++--------+
+|    20.0|
++--------+
+
+// 输出表结构
+df.printSchema
+
+// 基于df操作
+df.select("age").show
+
+// 直接引用列值操作，会被默认为字符串拼接
+df.select("age" + 1)
+org.apache.spark.sql.AnalysisException: cannot resolve '`age1`' given input columns: [age, username]
+
+// 正确引用列值
+df.select($"age" + 1).show
++---------+
+|(age + 1)|
++---------+
+|       31|
+|       21|
+|       11|
++---------+
+
+// 也可通过'进行标识，进行值引用， $和'一旦使用必须全部列一起使用
+df.select('age + 1).show
++---------+
+|(age + 1)|
++---------+
+|       31|
+|       21|
+|       11|
++---------+
+
+// 过滤数据
+df.filter('age > 20).show
++---+--------+
+|age|username|
++---+--------+
+| 30|zhangsan|
++---+--------+
+
+df.filter('age > 20).select("age").show
++---+
+|age|
++---+
+| 30|
++---+
+
+// 分组计数
+df.groupBy("username").count.show
++--------+-----+
+|username|count|
++--------+-----+
+|  wangwu|    1|
+|zhangsan|    1|
+|    lisi|    1|
++--------+-----+
+
+df.groupBy("username").sum("age").show
++--------+--------+
+|username|sum(age)|
++--------+--------+
+|  wangwu|      10|
+|zhangsan|      50|
+|    lisi|      20|
++--------+--------+
+
+
+
+
+
+
+
+
+
+
