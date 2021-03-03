@@ -26,7 +26,6 @@ object Spark04_sql_UDAF2 {
     //  早期使用Aggregator需在DSL语法中使用
 
 //    sparkSession.udf.register("MyAvgAge", functions.udaf(new MyAvgAge));
-//
 //    sparkSession.sql("select MyAvgAge(age) from user").show
 
     val ds: Dataset[User] = df.as[User]

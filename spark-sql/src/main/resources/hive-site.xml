@@ -1,0 +1,131 @@
+<configuration>
+    <property>
+        <name>javax.jdo.option.ConnectionURL</name>
+        <value>jdbc:mysql://192.168.17.3:3306/hive?createDatabaseIfNotExist=true</value>
+        <description>连接数据库</description>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionDriverName</name>
+        <value>com.mysql.jdbc.Driver</value>
+        <description>数据库连接驱动，需提供连接包</description>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionUserName</name>
+        <value>root</value>
+        <description>数据库连接用户名</description>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionPassword</name>
+        <value>xianyu</value>
+        <description>数据库登录密码</description>
+    </property>
+    <property>
+        <name>datanucleus.autoCreateSchema</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>datanucleus.autoCreateTables</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>datanucleus.autoCreateColumns</name>
+        <value>true</value>
+    </property>
+    <!-- 设置 hive仓库的HDFS上的位置 -->
+    <property>
+        <name>hive.metastore.warehouse.dir</name>
+        <value>/hive</value>
+        <description>存放在hdfs的路径</description>
+    </property>
+    <!--资源临时文件存放位置 -->
+    <property>
+        <name>hive.downloaded.resources.dir</name>
+        <value>/opt/module/hive/tmp/resources</value>
+        <description>Temporary local directory for added resources in the remote file system.</description>
+    </property>
+    <!-- Hive在0.9版本之前需要设置hive.exec.dynamic.partition为true, Hive在0.9版本之后默认为true -->
+    <property>
+        <name>hive.exec.dynamic.partition</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>hive.exec.dynamic.partition.mode</name>
+        <value>nonstrict</value>
+    </property>
+    <!-- 修改日志位置 -->
+    <property>
+        <name>hive.exec.local.scratchdir</name>
+        <value>/opt/module/hive/tmp/HiveJobsLog</value>
+        <description>Local scratch space for Hive jobs</description>
+    </property>
+    <property>
+        <name>hive.downloaded.resources.dir</name>
+        <value>/opt/module/hive/tmp/ResourcesLog</value>
+        <description>在远程文件系统中添加资源的临时本地目录</description>
+    </property>
+    <property>
+        <name>hive.querylog.location</name>
+        <value>/opt/module/hive/tmp/HiveRunLog</value>
+        <description>Hive运行时结构化日志文件的位置</description>
+    </property>
+    <property>
+        <name>hive.server2.logging.operation.log.location</name>
+        <value>/opt/module/hive/tmp/OpertitionLog</value>
+        <description>如果启用了日志记录功能，则存储操作tmp的顶级目录</description>
+    </property>
+    <!--	<property>
+                <name>hive.server2.thrift.bind.host</name>
+                <value>192.168.17.3</value>
+        </property>
+        <property>
+                <name>hive.server2.thrift.port</name>
+                <value>10000</value>
+        </property>
+        <property>
+                <name>hive.server2.thrift.http.port</name>
+                <value>10001</value>
+        </property>
+        <property>
+                <name>hive.server2.thrift.http.path</name>
+                <value>cliservice</value>
+        </property>
+         HiveServer2的WEB UI
+        <property>
+                <name>hive.server2.webui.host</name>
+                <value>192.168.17.3</value>
+        </property>
+        <property>
+                <name>hive.server2.webui.port</name>
+                <value>10002</value>
+        </property>
+        <property>
+                <name>hive.scratch.dir.permission</name>
+                <value>755</value>
+        </property>
+        <property>
+                <name>hive.server2.enable.doAs</name>
+                <value>false</value>
+        </property> -->
+    <!-- property>
+             <name>hive.server2.authentication</name>
+            <value>NOSASL</value>
+    </property -->
+    <property>
+        <name>hive.auto.convert.join</name>
+        <value>false</value>
+    </property>
+    <property>
+        <name>spark.dynamicAllocation.enabled</name>
+        <value>true</value>
+        <description>动态分配资源</description>
+    </property>
+    <!-- 使用Hive on spark时,若不设置下列该配置会出现内存溢出异常 -->
+    <property>
+        <name>spark.driver.extraJavaOptions</name>
+        <value>-XX:PermSize=128M -XX:MaxPermSize=512M</value>
+    </property>
+    <!--<property>
+            <name>hive.execution.engine</name>
+            <value>tez</value>
+    </property>-->
+</configuration>

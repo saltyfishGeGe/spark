@@ -1,0 +1,13 @@
+#连接外置hive
+1. 将hive的配置文件hive-site.xml复制到spark/conf目录下
+2. mysql的驱动包拷贝至jars下
+3. 如果访问不到hdfs，则需要拷贝core-site.xml和hdfs-site.xml拷贝至conf下
+4. 重启spark-shell
+
+
+异常：Hive Schema version 2.3.0 does not match metastore's schema version 1.2.0 Metastore is not upgraded or corrupt
+修改hive-site.xml配置：
+<property>
+    <name>hive.metastore.schema.verification</name>
+    <value>false</value>
+</property>
